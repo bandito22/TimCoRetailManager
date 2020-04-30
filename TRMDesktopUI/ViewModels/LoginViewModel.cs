@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using TRMDesktopUI.Helpers;
+using TRMDesktopUI.Lirary.Api;
 
 namespace TRMDesktopUI.ViewModels
 {
@@ -87,6 +88,8 @@ namespace TRMDesktopUI.ViewModels
             {
                 ErrorMessage = "";
                 var result = await _apihelper.Authenticate(UserName, Password);
+
+                await _apihelper.GetLoggedInUserInfo(result.Access_Token);
             }
             catch (Exception ex)
             {
