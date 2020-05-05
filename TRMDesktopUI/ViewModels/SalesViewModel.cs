@@ -29,7 +29,7 @@ namespace TRMDesktopUI.ViewModels
 			get { return _cart; }
 			set
 			{
-				_products = value;
+				_cart = value;
 				NotifyOfPropertyChange(() => Cart);
 			}
 		}
@@ -58,8 +58,6 @@ namespace TRMDesktopUI.ViewModels
 				return "£0.00";
 			}
 		}
-
-
 
 		private int _itemQuantity;
 
@@ -90,7 +88,6 @@ namespace TRMDesktopUI.ViewModels
 		{
 
 		}
-
 
 		public bool CanRemoveFromCart
 		{
