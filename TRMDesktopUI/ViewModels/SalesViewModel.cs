@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using TRMDesktopUI.Lirary.Api;
 using TRMDesktopUI.Lirary.Models;
 
@@ -41,9 +43,23 @@ namespace TRMDesktopUI.ViewModels
 			}
 		}
 
-		private BindingList<ProductModel> _cart;
+		private ProductModel _selectedProduct;
 
-		public BindingList<ProductModel> Cart
+		public ProductModel SelectedProduct
+		{
+			get { return _selectedProduct; }
+			set 
+			{ 
+				_selectedProduct = value;
+				NotifyOfPropertyChange(() => SelectedProduct);
+				NotifyOfPropertyChange(() => CanAddToCart);
+			}
+		}
+
+
+		private BindingList<CartItemModel> _cart = new BindingList<CartItemModel>();
+
+		public BindingList<CartItemModel> Cart
 		{
 			get { return _cart; }
 			set
@@ -56,9 +72,15 @@ namespace TRMDesktopUI.ViewModels
 		public string SubTotal
 		{
 			get 
-			{ 
-				//TODO: Replace with calculation
-				return "£0.00"; 
+			{
+				decimal subtotal = 0;
+
+				foreach (var item in _cart)
+				{
+					subtotal += (item.QuantityInCart * item.Product.RetailPrice);
+				}
+
+				return subtotal.ToString("C"); 
 			}
 		}
 		public string Tax
@@ -78,7 +100,7 @@ namespace TRMDesktopUI.ViewModels
 			}
 		}
 
-		private int _itemQuantity;
+		private int _itemQuantity = 1;
 
 		public int ItemQuantity
 		{
@@ -87,6 +109,7 @@ namespace TRMDesktopUI.ViewModels
 			{
 				_itemQuantity = value;
 				NotifyOfPropertyChange(() => ItemQuantity);
+				NotifyOfPropertyChange(() => CanAddToCart);
 			}
 		}
 
@@ -96,8 +119,10 @@ namespace TRMDesktopUI.ViewModels
 			{
 				bool output = false;
 
-				//make sure something is selected
-				//make sure there is a quantity
+				if (ItemQuantity > 0 && SelectedProduct?.QuantityInStock >= ItemQuantity)
+				{
+					output = true;
+				}
 
 				return output;
 			}
@@ -105,7 +130,32 @@ namespace TRMDesktopUI.ViewModels
 
 		public void AddToCart()
 		{
+			CartItemModel existingItem = Cart.FirstOrDefault(x => x.Product == SelectedProduct);
 
+			if (existingItem != null)
+			{
+				existingItem.QuantityInCart += ItemQuantity;
+				
+				//TODO
+				//HACK to refresh the cart. Should be a better way
+				Cart.Remove(existingItem);
+				Cart.Add(existingItem);
+			}
+			else
+			{
+				CartItemModel item = new CartItemModel
+				{
+					Product = SelectedProduct,
+					QuantityInCart = ItemQuantity
+				};
+				Cart.Add(item);
+			};
+
+			SelectedProduct.QuantityInStock -= ItemQuantity;
+			ItemQuantity = 1;
+
+			NotifyOfPropertyChange(() => SubTotal);
+			NotifyOfPropertyChange(() => Cart);
 		}
 
 		public bool CanRemoveFromCart
@@ -115,7 +165,7 @@ namespace TRMDesktopUI.ViewModels
 				bool output = false;
 
 				//make sure something is selected
-
+				NotifyOfPropertyChange(() => SubTotal);
 				return output;
 			}
 		}
